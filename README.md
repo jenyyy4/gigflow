@@ -1,0 +1,202 @@
+# GigFlow - Freelance Marketplace
+
+A mini-freelance marketplace platform where Clients can post jobs (Gigs) and freelancers can apply for them (Bids).
+
+## Features
+
+### Core Features
+- **User Authentication**: Secure JWT-based auth with HttpOnly cookies
+- **Fluid Roles**: Any user can post a job (Client) or bid on a job (Freelancer)
+- **Gig Management**: Full CRUD for job listings
+- **Search & Filter**: Search gigs by title with status filtering
+- **Bidding System**: Submit proposals with message and price
+- **Hiring Logic**: Atomic hiring with automatic bid status updates
+
+### Bonus Features
+- **Transactional Integrity**: MongoDB transactions prevent race conditions when hiring
+- **Real-time Updates**: Socket.io notifications for instant updates when hired
+
+## Tech Stack
+
+### Backend
+- Node.js + Express.js
+- MongoDB with Mongoose ODM
+- JWT Authentication with HttpOnly Cookies
+- Socket.io for real-time communication
+- MongoDB Transactions for atomic operations
+
+### Frontend
+- React.js (with Vite)
+- Redux Toolkit for State Management
+- Tailwind CSS for styling
+- Socket.io Client for real-time updates
+- React Router for navigation
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- MongoDB (local or Atlas)
+
+### Environment Variables
+
+Create a `.env` file in the `backend` folder:
+
+```env
+PORT=5001
+MONGODB_URI=mongodb://localhost:27017/gigflow
+JWT_SECRET=your_super_secret_jwt_key_change_in_production
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+```
+
+### Installation
+
+1. **Clone the repository**
+```bash
+cd gigflow-assignment
+```
+
+2. **Install Backend Dependencies**
+```bash
+cd backend
+npm install
+```
+
+3. **Install Frontend Dependencies**
+```bash
+cd ../frontend
+npm install
+```
+
+4. **Start MongoDB** (if running locally)
+
+5. **Start the Backend Server**
+```bash
+cd backend
+npm run dev
+```
+
+6. **Start the Frontend Development Server**
+```bash
+cd frontend
+npm run dev
+```
+
+7. **Open your browser** and navigate to `http://localhost:5173`
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login & set HttpOnly Cookie |
+| POST | `/api/auth/logout` | Logout user |
+| GET | `/api/auth/me` | Get current user |
+| GET | `/api/gigs` | Fetch all open gigs (with search query) |
+| GET | `/api/gigs/:id` | Get single gig |
+| GET | `/api/gigs/my-gigs` | Get user's posted gigs |
+| POST | `/api/gigs` | Create a new job post |
+| PUT | `/api/gigs/:id` | Update a gig |
+| DELETE | `/api/gigs/:id` | Delete a gig |
+| POST | `/api/bids` | Submit a bid for a gig |
+| GET | `/api/bids/:gigId` | Get all bids for a gig (Owner only) |
+| GET | `/api/bids/my-bids` | Get user's submitted bids |
+| PATCH | `/api/bids/:bidId/hire` | Hire a freelancer (Atomic) |
+
+## Database Schema
+
+### User
+```javascript
+{
+  name: String,
+  email: String (unique),
+  password: String (hashed)
+}
+```
+
+### Gig
+```javascript
+{
+  title: String,
+  description: String,
+  budget: Number,
+  ownerId: ObjectId (ref: User),
+  status: 'open' | 'assigned',
+  hiredFreelancerId: ObjectId (ref: User)
+}
+```
+
+### Bid
+```javascript
+{
+  gigId: ObjectId (ref: Gig),
+  freelancerId: ObjectId (ref: User),
+  message: String,
+  price: Number,
+  status: 'pending' | 'hired' | 'rejected'
+}
+```
+
+## Hiring Logic (Race Condition Prevention)
+
+The hiring system uses MongoDB transactions to ensure atomic operations:
+
+1. When "Hire" is clicked, a transaction begins
+2. The system verifies the gig is still "open" 
+3. Uses optimistic locking with `findOneAndUpdate` checking status
+4. Updates gig status to "assigned"
+5. Sets winning bid status to "hired"
+6. Rejects all other bids for that gig
+7. Commits transaction (or rolls back on failure)
+
+This prevents race conditions where two admins might try to hire different freelancers simultaneously.
+
+## Real-time Notifications
+
+Socket.io provides instant notifications:
+
+- **When Hired**: Freelancer receives instant "You have been hired!" notification
+- **When Rejected**: Freelancers notified when their bids are rejected
+- **New Bids**: Gig owners notified when new bids are submitted
+- **Gig Updates**: All users see real-time gig status changes
+
+## Project Structure
+
+```
+gigflow-assignment/
+├── backend/
+│   ├── config/
+│   │   └── db.js
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── bidController.js
+│   │   └── gigController.js
+│   ├── middleware/
+│   │   └── auth.js
+│   ├── models/
+│   │   ├── Bid.js
+│   │   ├── Gig.js
+│   │   └── User.js
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── bidRoutes.js
+│   │   └── gigRoutes.js
+│   ├── server.js
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   ├── utils/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│   └── vite.config.js
+└── README.md
+```
+
