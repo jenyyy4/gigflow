@@ -4,7 +4,8 @@ let socket = null;
 
 export const initSocket = () => {
   if (!socket) {
-    socket = io('/', {
+    const serverUrl = import.meta.env.VITE_SOCKET_URL || '/';
+    socket = io(serverUrl, {
       withCredentials: true,
     });
   }
