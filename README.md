@@ -2,6 +2,9 @@
 
 A mini-freelance marketplace platform where Clients can post jobs (Gigs) and freelancers can apply for them (Bids).
 
+## Demo
+https://drive.google.com/file/d/1AsMsdQT5URvKlaSIyw8jEl2uYKUUudj0/view?usp=sharing 
+
 ## Features
 
 ### Core Features
